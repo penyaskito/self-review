@@ -6,15 +6,14 @@
  * Script:
  *   1. Show the diff by scrolling down
  *   2. Click a file in the file tree to scroll
- *   3. Add a line comment
+ *   3. Add a line comment with image attachment
  *   4. Add a file-level comment with a different category
  *   5. Toggle new files on/off
- *   6. Switch to Unified view
- *   7. Switch to dark theme
- *   8. Edit the first comment to add a suggestion
- *   9. Switch back to light theme
- *  10. Close the window (triggers confirmation dialog)
- *  11. Click "Save & Quit"
+ *   6. Expand context (click expand button on a context bar)
+ *   7. Switch to Unified view
+ *   8. View rendered markdown file + add a comment with a suggestion
+ *   9. Close the window (triggers confirmation dialog)
+ *  10. Click "Save & Quit"
  *
  * Usage:
  *   npm run record:demo
@@ -219,8 +218,40 @@ test('Record demo', async () => {
     await waitForInputsClosed(page);
     await triggerCommentIcon(page, 'src/auth/login.ts', 9, 'new');
     await pause(page, 400);
+
+    // Paste image first — before typing text — so the async re-render triggered by
+    // setAttachments cannot interfere with MDEditor's controlled textarea content.
+    await page.evaluate(() => new Promise<void>((resolve) => {
+      const canvas = document.createElement('canvas');
+      canvas.width = 100;
+      canvas.height = 100;
+      const ctx = canvas.getContext('2d')!;
+      ctx.fillStyle = '#4a90d9';
+      ctx.fillRect(0, 0, 100, 100);
+      ctx.fillStyle = '#2c5f8a';
+      ctx.fillRect(10, 10, 80, 60);
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 11px sans-serif';
+      ctx.fillText('screenshot', 12, 45);
+      canvas.toBlob((blob) => {
+        if (!blob) { resolve(); return; }
+        const file = new File([blob], 'screenshot.png', { type: 'image/png' });
+        const dt = new DataTransfer();
+        dt.items.add(file);
+        const section = document.querySelector('[data-testid="file-section-src/auth/login.ts"]');
+        const input = section?.querySelector('[data-testid="comment-input"]') as HTMLElement | null;
+        input?.dispatchEvent(
+          new ClipboardEvent('paste', { clipboardData: dt, bubbles: true, cancelable: true }),
+        );
+        resolve();
+      }, 'image/png');
+    }));
+    await pause(page, 800); // allow image processing + thumbnail render
+
+    // Type comment text after the image is attached
     await humanType(page, getInput().locator('textarea'), 'This variable name is misleading');
     await pause(page, 500);
+
     await humanClick(page, getInput().locator('[data-testid="add-comment-btn"]'));
     await pause(page, 1500);
 
@@ -251,73 +282,92 @@ test('Record demo', async () => {
     await humanClick(page, toggleNewFiles);
     await pause(page, 1200);
 
-    // ── 6. Switch to Unified view ──
+    // ── 6. Expand context ──
+    // Scope to login.ts which has a bottom expand bar with actual hidden lines.
+    // Use the down-chevron icon button (expand below the hunk).
+    const loginExpandBar = loginSection.locator('.expand-context-bar').first();
+    await loginExpandBar.scrollIntoViewIfNeeded();
+    await pause(page, 600);
+    const expandDownBtn = loginExpandBar.locator('button').filter({
+      has: page.locator('svg.lucide-chevron-down'),
+    });
+    await humanClick(page, expandDownBtn);
+    await pause(page, 1500);
+
+    // ── 7. Switch to Unified view ──
     const unifiedBtn = page.locator('[data-testid="view-mode-unified"]');
     await humanClick(page, unifiedBtn);
     await pause(page, 1500);
 
-    // ── 7. Switch to dark theme ──
-    const darkBtn = page.locator('[data-testid="theme-option-dark"]');
-    await humanClick(page, darkBtn);
-    await pause(page, 2000);
+    // ── 8. View rendered markdown file + add a comment with suggestion ──
+    const mdFileEntry = page.locator('[data-testid="file-entry-docs/architecture.md"]');
+    await humanClick(page, mdFileEntry);
+    await pause(page, 800);
 
-    // ── 8. Edit the first (line-level) comment to add a suggestion ──
-    // Note: the suggest button only appears for line-level comments (not file-level),
-    // because originalCode is derived from the line range in the diff.
-    await waitForInputsClosed(page);
-    const commentSelector = '[data-testid^="comment-"]:not([data-testid^="comment-icon"]):not([data-testid="comment-input"]):not([data-testid^="comment-collapse"])';
+    // Click "Rendered" toggle in the sticky file header
+    const mdSection = page.locator('[data-testid="file-section-docs/architecture.md"]');
+    const mdHeader = page.locator('[data-testid="file-header-docs/architecture.md"]');
+    const renderedToggle = mdHeader.locator('[aria-label="Rendered view"]');
+    await renderedToggle.waitFor({ state: 'visible', timeout: 5000 });
+    const toggleBox = await renderedToggle.boundingBox();
+    if (toggleBox) {
+      await page.mouse.move(
+        toggleBox.x + toggleBox.width / 2,
+        toggleBox.y + toggleBox.height / 2,
+        { steps: 12 },
+      );
+      await pause(page, 200);
+    }
+    await renderedToggle.click();
+    await pause(page, 1500);
 
-    // The first line-level comment is the one on line 9 of login.ts.
-    // In unified view, file-level comments render at the top, so the line comment
-    // may be second. Find it by looking for the one containing our text.
-    const lineComment = loginSection
-      .locator(commentSelector, { hasText: 'This variable name is misleading' });
-    await lineComment.scrollIntoViewIfNeeded();
-    await pause(page, 400);
-
-    // Hover to reveal action buttons (opacity-0 → opacity-100 on group-hover)
-    await lineComment.hover();
-    await pause(page, 600);
-
-    // Click the Edit button (Pencil icon)
-    const editBtn = lineComment.locator('button', { has: page.locator('.lucide-pencil') });
-    await editBtn.waitFor({ state: 'visible', timeout: 3000 });
-    await humanClick(page, editBtn);
+    // Wait for rendered view, then open a comment on the first paragraph block
+    const renderedView = mdSection.locator('.rendered-markdown-view');
+    await renderedView.waitFor({ state: 'visible', timeout: 10000 });
+    const pBlock = page.locator('p.rendered-block').first();
+    await pBlock.waitFor({ state: 'visible', timeout: 5000 });
+    await pBlock.hover();
+    const renderedGutter = pBlock.locator('.rendered-gutter');
+    await renderedGutter.dispatchEvent('mousedown');
+    await page.waitForTimeout(100);
+    await page.evaluate(() =>
+      document.dispatchEvent(new MouseEvent('mouseup', { bubbles: true })),
+    );
     await pause(page, 500);
 
-    // The comment is now a CommentInput (edit mode replaces the display).
-    // There are two comment-inputs on page: the file-level one (no suggest btn)
-    // and the line-level one we just opened (has suggest btn). Target by text.
-    const editInput = page.locator('[data-testid="comment-input"]', { hasText: 'line 9' });
-    await editInput.waitFor({ state: 'visible', timeout: 5000 });
+    const mdInput = mdSection.locator('[data-testid="comment-input"]').first();
+    await mdInput.waitFor({ state: 'visible', timeout: 5000 });
 
-    // Click "Suggest"
-    const suggestBtn = editInput.locator('[data-testid="add-suggestion-btn"]');
+    // Click "Suggest" to open the suggestion block (original markdown source pre-filled)
+    const suggestBtn = mdInput.locator('[data-testid="add-suggestion-btn"]');
     await suggestBtn.waitFor({ state: 'visible', timeout: 5000 });
     await humanClick(page, suggestBtn);
     await pause(page, 600);
 
-    // Type proposed code
-    const proposedEditor = editInput.locator('[data-testid="suggestion-proposed"] textarea');
+    // Type the comment body — target the MDEditor textarea specifically
+    await humanType(page, mdInput.locator('.w-md-editor-text-input'), 'Consider adding a diagram here');
+    await pause(page, 400);
+
+    // Replace the proposed markdown text — fill() clears existing content, then type visibly
+    const proposedEditor = mdInput.locator('[data-testid="suggestion-proposed"] textarea');
     await proposedEditor.waitFor({ state: 'visible', timeout: 3000 });
-    await humanType(page, proposedEditor, 'const isValid = await verifyPassword(password, user.hash);');
+    await proposedEditor.fill('');
+    await humanType(
+      page,
+      proposedEditor,
+      'This document describes the high-level architecture. See the diagram below.',
+    );
     await pause(page, 600);
 
-    // Submit
-    await humanClick(page, editInput.locator('[data-testid="add-comment-btn"]'));
+    await humanClick(page, mdInput.locator('[data-testid="add-comment-btn"]'));
     await pause(page, 2000);
 
     // Scroll to show the suggestion block
-    const suggestionBlock = loginSection.locator('[data-testid="suggestion-block"]').first();
-    await suggestionBlock.scrollIntoViewIfNeeded();
+    const mdSuggestionBlock = mdSection.locator('[data-testid="suggestion-block"]').first();
+    await mdSuggestionBlock.scrollIntoViewIfNeeded();
     await pause(page, 1500);
 
-    // ── 9. Switch back to light theme ──
-    const lightBtn = page.locator('[data-testid="theme-option-light"]');
-    await humanClick(page, lightBtn);
-    await pause(page, 1500);
-
-    // ── 10. Close the window (triggers confirmation dialog) ──
+    // ── 9. Close the window (triggers confirmation dialog) ──
     // Trigger close via main process — this sends app:close-requested to renderer
     await electronApp.evaluate(({ BrowserWindow }) => {
       const win = BrowserWindow.getAllWindows()[0];
@@ -325,7 +375,7 @@ test('Record demo', async () => {
     });
     await pause(page, 1500);
 
-    // ── 11. Click "Save & Quit" ──
+    // ── 10. Click "Save & Quit" ──
     const saveBtn = page.locator('button:has-text("Save & Quit")');
     await saveBtn.waitFor({ state: 'visible', timeout: 5000 });
     await humanClick(page, saveBtn);

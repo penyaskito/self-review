@@ -137,6 +137,49 @@ export function createTestRepo(): string {
     Array.from({ length: 20 }, (_, i) => `export const feature${i + 1} = true;`).join('\n')
   );
 
+  // Add a new untracked markdown file for rendered markdown view demo
+  mkdirSync(join(repoDir, 'docs'), { recursive: true });
+  writeFileSync(
+    join(repoDir, 'docs', 'architecture.md'),
+    [
+      '# Architecture Overview',
+      '',
+      'This document describes the high-level architecture of the application.',
+      '',
+      '## Core Modules',
+      '',
+      '- **Auth** — Handles user authentication and session management',
+      '- **Config** — Application configuration and environment setup',
+      '- **Database** — Data access layer with connection pooling',
+      '',
+      '## Request Lifecycle',
+      '',
+      'Every incoming request goes through the following stages:',
+      '',
+      '1. Route matching and middleware execution',
+      '2. Authentication and authorization checks',
+      '3. Request validation and parameter parsing',
+      '4. Business logic execution',
+      '5. Response serialization and delivery',
+      '',
+      '## Configuration',
+      '',
+      'The app reads configuration from environment variables and YAML files:',
+      '',
+      '```typescript',
+      'const config = loadConfig({',
+      '  env: process.env.NODE_ENV,',
+      '  configDir: "./config",',
+      '});',
+      '```',
+      '',
+      '## Error Handling',
+      '',
+      'All errors are caught at the middleware level and transformed',
+      'into structured JSON responses with appropriate HTTP status codes.',
+    ].join('\n')
+  );
+
   // Do NOT stage — changes are visible via bare `git diff`
 
   return repoDir;
