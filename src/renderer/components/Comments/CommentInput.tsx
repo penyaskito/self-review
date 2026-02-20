@@ -115,7 +115,8 @@ export default function CommentInput({
     }
   }, [existingComment]);
 
-  const isValid = body.trim().length > 0 && category.length > 0;
+  const hasContent = body.trim().length > 0 || (showSuggestion && !!originalCode) || attachments.length > 0;
+  const isValid = hasContent && category.length > 0;
 
   const handleSubmit = () => {
     if (!isValid) return;
