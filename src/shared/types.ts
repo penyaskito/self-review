@@ -129,6 +129,20 @@ export interface ExpandContextResponse {
   totalLines: number;
 }
 
+// ===== Find in Page Types =====
+
+export interface FindInPageRequest {
+  text: string;
+  forward: boolean;
+  findNext: boolean;
+}
+
+export interface FindInPageResult {
+  activeMatchOrdinal: number;
+  matches: number;
+  finalUpdate: boolean;
+}
+
 // ===== Electron API (preload bridge) =====
 
 export interface ElectronAPI {
@@ -140,13 +154,16 @@ export interface ElectronAPI {
   onResumeLoad: (callback: (payload: ResumeLoadPayload) => void) => void;
   submitReview: (state: ReviewState) => void;
   onRequestReview: (callback: () => void) => void;
-  onCloseRequested: (callback: () => void) => void;
+  onCloseRequested: (callback: () => void) => () => void;
   saveAndQuit: () => void;
   readAttachment: (filePath: string) => Promise<ArrayBuffer | null>;
   discardAndQuit: () => void;
   pickDirectory: () => Promise<string | null>;
   startDirectoryReview: (path: string) => Promise<void>;
   expandContext: (request: ExpandContextRequest) => Promise<ExpandContextResponse | null>;
+  findInPage: (request: FindInPageRequest) => void;
+  stopFindInPage: (action: string) => void;
+  onFindResult: (callback: (result: FindInPageResult) => void) => () => void;
 }
 
 declare global {

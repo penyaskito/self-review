@@ -77,10 +77,11 @@ self-review/
 
 The app supports Vimium-style keyboard navigation:
 
+- `Ctrl/Cmd+F` — Open find-in-page search bar (Chromium native text search)
 - `f` — Activate hint labels on changed diff lines to open a comment input
 - `g` — Activate hint labels on file tree entries to jump to a file
 - `j` / `k` — Smooth scroll the diff pane down/up
-- `Escape` — Dismiss active hint overlay
+- `Escape` — Dismiss active hint overlay or close find bar
 
 All shortcuts are suppressed when a text input has focus. The implementation lives in `useKeyboardNavigation` hook with `HintOverlay` for rendering hint badges.
 

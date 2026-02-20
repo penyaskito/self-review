@@ -9,6 +9,8 @@ import {
   AppConfig,
   ReviewState,
   ExpandContextRequest,
+  FindInPageRequest,
+  FindInPageResult,
 } from '../shared/types';
 
 contextBridge.exposeInMainWorld('electronAPI', {
@@ -51,7 +53,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
   },
 
   onCloseRequested: (callback: () => void) => {
-    ipcRenderer.on(IPC.APP_CLOSE_REQUESTED, () => callback());
+    const handler = () => callback();
+    ipcRenderer.on(IPC.APP_CLOSE_REQUESTED, handler);
+    return () => ipcRenderer.removeListener(IPC.APP_CLOSE_REQUESTED, handler);
   },
 
   saveAndQuit: () => {
@@ -72,4 +76,19 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
   expandContext: (request: ExpandContextRequest) =>
     ipcRenderer.invoke(IPC.DIFF_EXPAND_CONTEXT, request),
+
+  findInPage: (request: FindInPageRequest) => {
+    ipcRenderer.send(IPC.FIND_IN_PAGE, request);
+  },
+
+  stopFindInPage: (action: string) => {
+    ipcRenderer.send(IPC.FIND_STOP, action);
+  },
+
+  onFindResult: (callback: (result: FindInPageResult) => void) => {
+    const handler = (_event: Electron.IpcRendererEvent, result: FindInPageResult) =>
+      callback(result);
+    ipcRenderer.on(IPC.FIND_RESULT, handler);
+    return () => ipcRenderer.removeListener(IPC.FIND_RESULT, handler);
+  },
 });

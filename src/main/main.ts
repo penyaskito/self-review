@@ -13,6 +13,7 @@ import { parseReviewXml } from './xml-parser';
 import { serializeReview } from './xml-serializer';
 import {
   registerIpcHandlers,
+  registerFindInPageForWindow,
   setDiffData,
   setConfigData,
   setResumeComments,
@@ -312,6 +313,8 @@ function createWindow(): void {
       contextIsolation: true,
     },
   });
+
+  registerFindInPageForWindow(mainWindow);
 
   mainWindow.loadURL(MAIN_WINDOW_WEBPACK_ENTRY);
 

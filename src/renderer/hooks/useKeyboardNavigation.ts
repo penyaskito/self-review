@@ -42,7 +42,11 @@ function scrollDiff(direction: 1 | -1): void {
   }
 }
 
-export function useKeyboardNavigation() {
+interface KeyboardNavigationOptions {
+  onToggleFindBar?: () => void;
+}
+
+export function useKeyboardNavigation(options: KeyboardNavigationOptions = {}) {
   const [mode, setMode] = useState<HintMode>('normal');
   const [hints, setHints] = useState<HintItem[]>([]);
   const [inputBuffer, setInputBuffer] = useState('');
@@ -65,6 +69,9 @@ export function useKeyboardNavigation() {
 
   const clearHintsRef = useRef(clearHints);
   clearHintsRef.current = clearHints;
+
+  const onToggleFindBarRef = useRef(options.onToggleFindBar);
+  onToggleFindBarRef.current = options.onToggleFindBar;
 
   const activateHint = useCallback(
     (hint: HintItem) => {
@@ -169,6 +176,13 @@ export function useKeyboardNavigation() {
 
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
+      // Ctrl/Cmd+F: toggle find bar (works even when text input is focused)
+      if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
+        e.preventDefault();
+        onToggleFindBarRef.current?.();
+        return;
+      }
+
       if (isTextInputFocused()) return;
 
       const currentMode = modeRef.current;

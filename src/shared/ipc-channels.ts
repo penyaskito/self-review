@@ -15,4 +15,7 @@ export const IPC = {
   DIALOG_PICK_DIRECTORY: 'dialog:pick-directory',
   REVIEW_START_DIRECTORY: 'review:start-directory',
   DIFF_EXPAND_CONTEXT: 'diff:expand-context',
+  FIND_IN_PAGE: 'find:in-page',
+  FIND_STOP: 'find:stop',
+  FIND_RESULT: 'find:result',
 } as const;

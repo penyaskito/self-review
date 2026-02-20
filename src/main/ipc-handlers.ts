@@ -12,6 +12,7 @@ import {
   ReviewState,
   ReviewComment,
   ExpandContextRequest,
+  FindInPageRequest,
 } from '../shared/types';
 import { scanDirectory, scanFile } from './directory-scanner';
 
@@ -176,6 +177,32 @@ export function registerIpcHandlers(): void {
     }
   );
 
+  // Find in page: forward search request to Chromium
+  ipcMain.on(IPC.FIND_IN_PAGE, (event, request: FindInPageRequest) => {
+    const win = BrowserWindow.fromWebContents(event.sender);
+    if (!win) return;
+
+    if (!request.text) {
+      win.webContents.stopFindInPage('clearSelection');
+      return;
+    }
+
+    win.webContents.findInPage(request.text, {
+      forward: request.forward,
+      findNext: request.findNext,
+    });
+  });
+
+  // Stop find in page
+  ipcMain.on(IPC.FIND_STOP, (event, action: string) => {
+    const win = BrowserWindow.fromWebContents(event.sender);
+    if (!win) return;
+
+    win.webContents.stopFindInPage(
+      action as 'clearSelection' | 'keepSelection' | 'activateSelection'
+    );
+  });
+
   // Start a directory review from a picked path
   ipcMain.handle(
     IPC.REVIEW_START_DIRECTORY,
@@ -279,6 +306,16 @@ export function sendResumeLoad(
   payload: ResumeLoadPayload
 ): void {
   window.webContents.send(IPC.RESUME_LOAD, payload);
+}
+
+export function registerFindInPageForWindow(window: BrowserWindow): void {
+  window.webContents.on('found-in-page', (_event, result) => {
+    window.webContents.send(IPC.FIND_RESULT, {
+      activeMatchOrdinal: result.activeMatchOrdinal,
+      matches: result.matches,
+      finalUpdate: result.finalUpdate,
+    });
+  });
 }
 
 export function requestReviewFromRenderer(
