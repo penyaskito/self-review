@@ -18,6 +18,10 @@ function AppContent() {
     setIsFindBarOpen(prev => !prev);
   }, []);
 
+  if (diffSource.type === 'loading') {
+    return null;
+  }
+
   if (diffSource.type === 'welcome') {
     return <WelcomeScreen />;
   }

@@ -39,7 +39,8 @@ export type DiffSource =
   | { type: 'git'; gitDiffArgs: string; repository: string }
   | { type: 'directory'; sourcePath: string }
   | { type: 'file'; sourcePath: string }
-  | { type: 'welcome' };
+  | { type: 'welcome' }
+  | { type: 'loading' };
 
 // ===== Review State Types =====
 

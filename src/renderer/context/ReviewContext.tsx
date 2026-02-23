@@ -65,7 +65,7 @@ interface ReviewProviderProps {
 
 export function ReviewProvider({ children }: ReviewProviderProps) {
   const [allDiffFiles, setAllDiffFiles] = useState<DiffFile[]>([]);
-  const [diffSource, setDiffSource] = useState<DiffSource>({ type: 'welcome' });
+  const [diffSource, setDiffSource] = useState<DiffSource>({ type: 'loading' });
   const { config } = useConfig();
 
   const reviewState = useReviewState();

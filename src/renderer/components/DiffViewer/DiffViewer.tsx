@@ -104,8 +104,8 @@ export default function DiffViewer() {
   };
 
   if (diffFiles.length === 0) {
-    // Welcome mode: don't render empty state (App.tsx handles welcome screen)
-    if (diffSource.type === 'welcome') {
+    // Loading/welcome mode: don't render empty state (App.tsx handles these)
+    if (diffSource.type === 'welcome' || diffSource.type === 'loading') {
       return null;
     }
 
