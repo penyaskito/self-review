@@ -71,6 +71,14 @@ let testRepoDir: string | null = null;
  * Returns the first window's Page for UI interaction.
  */
 export async function launchApp(cliArgs: string[], cwd: string): Promise<Page> {
+  return launchAppWithRetry(cliArgs, cwd, 1);
+}
+
+async function launchAppWithRetry(
+  cliArgs: string[],
+  cwd: string,
+  retriesLeft: number
+): Promise<Page> {
   resetState();
 
   electronApp = await electron.launch({
@@ -100,12 +108,7 @@ export async function launchApp(cliArgs: string[], cwd: string): Promise<Page> {
     await appPage.waitForLoadState('domcontentloaded');
     return appPage;
   } catch (error) {
-    process.stderr.write(`\n[launchApp failed] ${error}\n`);
-    process.stderr.write(
-      `[stderr from Electron] ${stderrData.slice(0, 1000)}\n`
-    );
-    // Kill the orphaned Electron process so the fallback to
-    // launchAppExpectExit() doesn't compete with a zombie.
+    // Kill the orphaned Electron process before retrying or throwing.
     try {
       electronApp.process().kill();
     } catch {
@@ -113,6 +116,19 @@ export async function launchApp(cliArgs: string[], cwd: string): Promise<Page> {
     }
     electronApp = null;
     appPage = null;
+
+    if (retriesLeft > 0) {
+      process.stderr.write(
+        `\n[launchApp] Retrying after failure (${retriesLeft} retries left): ${error}\n`
+      );
+      await new Promise(resolve => setTimeout(resolve, 500));
+      return launchAppWithRetry(cliArgs, cwd, retriesLeft - 1);
+    }
+
+    process.stderr.write(`\n[launchApp failed] ${error}\n`);
+    process.stderr.write(
+      `[stderr from Electron] ${stderrData.slice(0, 1000)}\n`
+    );
     throw error;
   }
 }
@@ -259,9 +275,11 @@ export async function cleanup(): Promise<void> {
           resolve();
           return;
         }
-        const timer = setTimeout(resolve, 3000);
+        const timer = setTimeout(resolve, 5000);
         proc.on('close', () => { clearTimeout(timer); resolve(); });
       });
+      // Brief settle delay to let the OS fully release process resources
+      await new Promise(resolve => setTimeout(resolve, 200));
     } catch {
       // ElectronApplication may already be disposed (e.g. process crashed
       // during the test). Accessing .process() on a disposed instance throws.

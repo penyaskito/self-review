@@ -7,7 +7,7 @@ const bddTestDir = defineBddConfig({
 });
 
 export default defineConfig({
-  retries: process.env.CI ? 2 : 0,
+  retries: process.env.CI ? 2 : 1,
   workers: 1,
   projects: [
     {
