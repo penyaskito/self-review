@@ -23,7 +23,17 @@ export function FindBar({ isOpen, onClose }: FindBarProps) {
 
     // Check if this is a new search or cycling through existing results
     const isNewSearch = query !== lastSearchedQueryRef.current;
-    window.electronAPI.findInPage({ text: query, forward: true, findNext: !isNewSearch });
+
+    if (isNewSearch) {
+      // WORKAROUND: Chromium doesn't fire 'found-in-page' event for the first
+      // findInPage call with findNext: false. Call it twice to get the event.
+      window.electronAPI.findInPage({ text: query, forward: true, findNext: false });
+      // Immediate second call to trigger the event and populate counter
+      window.electronAPI.findInPage({ text: query, forward: true, findNext: true });
+    } else {
+      // Normal cycling through existing results
+      window.electronAPI.findInPage({ text: query, forward: true, findNext: true });
+    }
 
     // Update the last searched query after initiating search
     lastSearchedQueryRef.current = query;
@@ -34,7 +44,17 @@ export function FindBar({ isOpen, onClose }: FindBarProps) {
 
     // Check if this is a new search or cycling through existing results
     const isNewSearch = query !== lastSearchedQueryRef.current;
-    window.electronAPI.findInPage({ text: query, forward: false, findNext: !isNewSearch });
+
+    if (isNewSearch) {
+      // WORKAROUND: Chromium doesn't fire 'found-in-page' event for the first
+      // findInPage call with findNext: false. Call it twice to get the event.
+      window.electronAPI.findInPage({ text: query, forward: false, findNext: false });
+      // Immediate second call to trigger the event and populate counter
+      window.electronAPI.findInPage({ text: query, forward: false, findNext: true });
+    } else {
+      // Normal cycling through existing results
+      window.electronAPI.findInPage({ text: query, forward: false, findNext: true });
+    }
 
     // Update the last searched query after initiating search
     lastSearchedQueryRef.current = query;
