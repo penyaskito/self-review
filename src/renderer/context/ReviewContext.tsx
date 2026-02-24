@@ -92,13 +92,22 @@ export function ReviewProvider({ children }: ReviewProviderProps) {
   // When allDiffFiles change, initialize FileReviewState for all files
   useEffect(() => {
     if (allDiffFiles.length > 0) {
-      const fileStates: FileReviewState[] = allDiffFiles.map(file => ({
-        path: file.newPath || file.oldPath,
-        changeType: file.changeType,
-        viewed: false,
-        comments: [] as ReviewComment[],
-      }));
-      reviewState.setFiles(fileStates);
+      reviewState.setFiles(prev => {
+        const prevByPath = new Map(prev.map(f => [f.path, f]));
+        return allDiffFiles.map(file => {
+          const path = file.newPath || file.oldPath;
+          const existing = prevByPath.get(path);
+          if (existing) {
+            return { ...existing, changeType: file.changeType };
+          }
+          return {
+            path,
+            changeType: file.changeType,
+            viewed: false,
+            comments: [] as ReviewComment[],
+          };
+        });
+      });
     }
   }, [allDiffFiles]);
 
