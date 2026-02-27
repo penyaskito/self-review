@@ -98,7 +98,10 @@ export function FindBar({ isOpen, onClose }: FindBarProps) {
       if (result.finalUpdate) {
         setActiveMatch(result.activeMatchOrdinal);
         setTotalMatches(result.matches);
-        // Don't refocus - let the global Enter handler work without input focus
+        // Don't refocus — Chromium's findInPage steals focus to highlight
+        // matches, and refocusing invalidates the find session, breaking
+        // Enter/button cycling. The global keydown handler catches Enter
+        // when input doesn't have focus.
       }
     });
 
@@ -141,26 +144,15 @@ export function FindBar({ isOpen, onClose }: FindBarProps) {
     return () => document.removeEventListener('keydown', handleGlobalKeyDown);
   }, [isOpen, query, findNext, findPrevious, handleClose]);
 
-  // Auto-search when query changes
+  // Clear highlights when query is emptied
   useEffect(() => {
-    if (!isOpen || !query) {
-      if (!query && lastSearchedQueryRef.current) {
-        window.electronAPI.stopFindInPage('clearSelection');
-        setActiveMatch(0);
-        setTotalMatches(0);
-        lastSearchedQueryRef.current = '';
-      }
-      return;
+    if (!query && lastSearchedQueryRef.current) {
+      window.electronAPI.stopFindInPage('clearSelection');
+      setActiveMatch(0);
+      setTotalMatches(0);
+      lastSearchedQueryRef.current = '';
     }
-
-    if (query !== lastSearchedQueryRef.current) {
-      // WORKAROUND: Chromium doesn't fire 'found-in-page' event for the first
-      // findInPage call with findNext: false. Call it twice to get the event.
-      window.electronAPI.findInPage({ text: query, forward: true, findNext: false });
-      window.electronAPI.findInPage({ text: query, forward: true, findNext: true });
-      lastSearchedQueryRef.current = query;
-    }
-  }, [isOpen, query]);
+  }, [query]);
 
   // Clear highlights when closing
   useEffect(() => {
@@ -175,9 +167,15 @@ export function FindBar({ isOpen, onClose }: FindBarProps) {
 
   if (!isOpen) return null;
 
-  const matchDisplay = query
-    ? totalMatches > 0
-      ? `${activeMatch} of ${totalMatches}`
+  // Chromium's findInPage searches the entire DOM including the find bar's
+  // own input, so the query text in the input always counts as one extra match.
+  // Subtract 1 from the total and cap the active ordinal accordingly.
+  const adjustedTotal = Math.max(0, totalMatches - 1);
+  const adjustedActive = Math.min(activeMatch, adjustedTotal);
+  const searched = query && lastSearchedQueryRef.current === query;
+  const matchDisplay = searched
+    ? adjustedTotal > 0
+      ? `${adjustedActive} of ${adjustedTotal}`
       : 'No results'
     : '';
 
@@ -202,7 +200,7 @@ export function FindBar({ isOpen, onClose }: FindBarProps) {
         size="icon"
         className="h-7 w-7"
         onClick={findPrevious}
-        disabled={!query || totalMatches === 0}
+        disabled={!query || adjustedTotal === 0}
         title="Previous match (Shift+Enter)"
       >
         <ChevronUp className="h-4 w-4" />
@@ -212,7 +210,7 @@ export function FindBar({ isOpen, onClose }: FindBarProps) {
         size="icon"
         className="h-7 w-7"
         onClick={findNext}
-        disabled={!query || totalMatches === 0}
+        disabled={!query || adjustedTotal === 0}
         title="Next match (Enter)"
       >
         <ChevronDown className="h-4 w-4" />
