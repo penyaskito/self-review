@@ -2,7 +2,7 @@
 
 [![CI](https://github.com/e0ipso/self-review/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/e0ipso/self-review/actions/workflows/ci.yml)
  
-https://github.com/user-attachments/assets/ab7b0a16-af82-4774-90cd-022219b0a114
+https://github.com/user-attachments/assets/ada04c50-9107-4f0d-a1ee-789016bbf2de
 
 A local code review tool for developers working with AI coding agents.
 
