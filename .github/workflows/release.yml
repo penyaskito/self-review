@@ -67,11 +67,18 @@ jobs:
             echo "tag=" >> "$GITHUB_OUTPUT"
           fi
 
+      - name: Diagnose OIDC environment
+        if: steps.tag.outputs.tag != ''
+        run: |
+          echo "GITHUB_ACTIONS=$GITHUB_ACTIONS"
+          echo "ACTIONS_ID_TOKEN_REQUEST_URL set: $([[ -n "$ACTIONS_ID_TOKEN_REQUEST_URL" ]] && echo yes || echo no)"
+          echo "ACTIONS_ID_TOKEN_REQUEST_TOKEN set: $([[ -n "$ACTIONS_ID_TOKEN_REQUEST_TOKEN" ]] && echo yes || echo no)"
+
       - name: Publish workspace packages to npm
         if: steps.tag.outputs.tag != ''
         run: |
           for pkg in packages/core packages/react; do
-            (cd "$pkg" && npm run build && npm publish --provenance --access public --loglevel verbose)
+            (cd "$pkg" && npm run build && npm publish --provenance --access public --loglevel silly)
           done
         env:
           NODE_AUTH_TOKEN: ''
