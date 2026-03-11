@@ -1,6 +1,6 @@
 {
   "name": "@self-review/react",
-  "version": "1.27.7",
+  "version": "1.28.0",
   "description": "React components for self-review: embeddable code review UI with diff viewer and commenting",
   "repository": {
     "type": "git",
@@ -23,7 +23,9 @@
   "files": [
     "dist"
   ],
-  "sideEffects": ["./dist/styles.css"],
+  "sideEffects": [
+    "./dist/styles.css"
+  ],
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",
