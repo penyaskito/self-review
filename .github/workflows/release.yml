@@ -73,6 +73,8 @@ jobs:
           for pkg in packages/core packages/react; do
             (cd "$pkg" && npm run build && npm publish --provenance --access public)
           done
+        env:
+          NODE_AUTH_TOKEN: ''
 
       - name: Install Linux maker dependencies
         if: steps.tag.outputs.tag != ''
