@@ -7,8 +7,7 @@
       "TZ": "${localEnv:TZ:Europe/Madrid}",
       "CLAUDE_CODE_VERSION": "latest",
       "GEMINI_VERSION": "latest",
-      "GIT_DELTA_VERSION": "0.18.2",
-      "ZSH_IN_DOCKER_VERSION": "1.2.0"
+      "GIT_DELTA_VERSION": "0.18.2"
     }
   },
   "runArgs": [
@@ -28,14 +27,10 @@
         "editor.codeActionsOnSave": {
           "source.fixAll.eslint": "explicit"
         },
-        "terminal.integrated.defaultProfile.linux": "zsh",
         "terminal.integrated.profiles.linux": {
           "bash": {
             "path": "bash",
             "icon": "terminal-bash"
-          },
-          "zsh": {
-            "path": "zsh"
           }
         }
       }

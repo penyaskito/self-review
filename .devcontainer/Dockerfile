@@ -13,7 +13,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
   procps \
   sudo \
   fzf \
-  zsh \
   man-db \
   unzip \
   gnupg2 \
@@ -96,23 +95,12 @@ USER node
 # Install global packages
 ENV NPM_CONFIG_PREFIX=/usr/local/share/npm-global
 ENV PATH=$PATH:/usr/local/share/npm-global/bin:/home/node/.local/bin
-
-# Set the default shell to zsh rather than sh
-ENV SHELL=/bin/zsh
+ENV PROMPT_COMMAND='history -a'
+ENV HISTFILE=/commandhistory/.bash_history
 
 # Set the default editor and visual
 ENV EDITOR=vim
 ENV VISUAL=vim
-
-# Default powerline10k theme
-ARG ZSH_IN_DOCKER_VERSION=1.2.0
-RUN sh -c "$(wget -O- https://github.com/deluan/zsh-in-docker/releases/download/v${ZSH_IN_DOCKER_VERSION}/zsh-in-docker.sh)" -- \
-  -p git \
-  -p fzf \
-  -a "source /usr/share/doc/fzf/examples/key-bindings.zsh" \
-  -a "source /usr/share/doc/fzf/examples/completion.zsh" \
-  -a "export PROMPT_COMMAND='history -a' && export HISTFILE=/commandhistory/.bash_history" \
-  -x
 
 # Install Claude & Gemini
 RUN curl -fsSL https://claude.ai/install.sh | bash
