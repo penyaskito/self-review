@@ -11,7 +11,7 @@ export default defineConfig([
       '**/node_modules/**',
       '**/coverage/**',
       '**/.ai/**',
-      '.claude/worktrees/**',
+      '**/.claude/worktrees/**',
       '**/build/**',
       '**/.webpack/**',
       'eslint.config.*',
