@@ -73,6 +73,7 @@ const defaults: AppConfig = {
   ],
   defaultDiffArgs: '',
   showUntracked: true,
+  showUntrackedExplicit: false,
   wordWrap: true,
   maxFiles: 500,
   maxTotalLines: 100000,
@@ -180,6 +181,7 @@ function loadYamlConfig(path: string): Partial<AppConfig> {
 
   if ('show-untracked' in raw && typeof raw['show-untracked'] === 'boolean') {
     config.showUntracked = raw['show-untracked'];
+    config.showUntrackedExplicit = true;
   }
 
   if ('word-wrap' in raw && typeof raw['word-wrap'] === 'boolean') {

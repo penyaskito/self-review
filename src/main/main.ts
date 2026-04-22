@@ -10,6 +10,7 @@ import { parseCliArgs, checkEarlyExit, normalizeGitDiffArgs } from './cli';
 import { loadGitDiffWithUntracked } from './git-diff-loader';
 import { scanDirectory, scanFile } from './directory-scanner';
 import { loadConfig } from './config';
+import { applyStagedUntrackedDefault } from './staged-untracked';
 import { createIgnoreFilter } from './ignore-filter';
 import { parseReviewXml } from './xml-parser';
 import { serializeReview } from './xml-serializer';
@@ -204,6 +205,12 @@ async function initializeApp() {
     // Normalize: insert `--` before bare path args so expand-context
     // never confuses them with revisions.
     gitDiffArgs = normalizeGitDiffArgs(gitDiffArgs);
+
+    // In staged-mode (--staged / --cached), hide untracked files by default
+    // unless the user explicitly opted in via `show-untracked: true` in YAML.
+    // Must run before any code reads appConfig.showUntracked or sends config
+    // to the renderer via setConfigData.
+    appConfig = applyStagedUntrackedDefault(appConfig, gitDiffArgs);
 
     // Phase 4: Determine startup mode
     const mode = determineMode(gitDiffArgs);

@@ -71,7 +71,39 @@ show-untracked: false
 
       expect(config.diffView).toBe('unified');
       expect(config.showUntracked).toBe(false);
+      expect(config.showUntrackedExplicit).toBe(true);
       expect(config.theme).toBe('system'); // Still has default
+    });
+
+    it('keeps showUntrackedExplicit false when show-untracked is absent', () => {
+      vi.mocked(fs.existsSync).mockReturnValue(false);
+
+      const config = loadConfig();
+
+      expect(config.showUntracked).toBe(true);
+      expect(config.showUntrackedExplicit).toBe(false);
+    });
+
+    it('sets showUntrackedExplicit true when show-untracked: true', () => {
+      const mockYaml = `show-untracked: true`;
+      vi.mocked(fs.existsSync).mockReturnValue(true);
+      vi.mocked(fs.readFileSync).mockReturnValue(mockYaml);
+
+      const config = loadConfig();
+
+      expect(config.showUntracked).toBe(true);
+      expect(config.showUntrackedExplicit).toBe(true);
+    });
+
+    it('keeps showUntrackedExplicit false when show-untracked has invalid type', () => {
+      const mockYaml = `show-untracked: "yes"`;
+      vi.mocked(fs.existsSync).mockReturnValue(true);
+      vi.mocked(fs.readFileSync).mockReturnValue(mockYaml);
+
+      const config = loadConfig();
+
+      expect(config.showUntracked).toBe(true); // default preserved
+      expect(config.showUntrackedExplicit).toBe(false);
     });
 
     it('merges user and project configs with project taking precedence', () => {
