@@ -106,6 +106,7 @@ export interface AppConfig {
   categories: CategoryDef[];
   defaultDiffArgs: string;
   showUntracked: boolean;
+  showUntrackedExplicit: boolean;
   wordWrap: boolean;
   maxFiles: number;
   maxTotalLines: number;

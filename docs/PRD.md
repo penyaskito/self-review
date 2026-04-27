@@ -358,7 +358,7 @@ A top toolbar provides global controls:
 |---------|------|-------------|
 | View mode toggle | Segmented button | Switch between Split and Unified diff views |
 | Expand/Collapse all | Button | Expand or collapse all file sections at once |
-| Show/hide untracked | Toggle button | Show or hide untracked files (new files not yet added to git). Default: on. |
+| Show/hide untracked | Toggle button | Show or hide untracked files (new files not yet added to git). Default: on, except for `--staged` / `--cached` reviews where untracked files are hidden by default. |
 | Line wrap toggle | Toggle button | Wrap or unwrap long lines in the code content area. When off, long lines scroll horizontally. Default: on. |
 | Diff stats summary | Text | Shows total files changed, additions (+N in green), and deletions (-N in red). Computed from the parsed diff data. |
 | Theme toggle | Button or dropdown | Switch between Light, Dark, and System theme |
@@ -521,7 +521,9 @@ output-file: ./review.xml
 # Default output format (reserved for future multi-format support)
 output-format: xml
 
-# Show untracked files in the diff viewer: true or false
+# Show untracked files in the diff viewer: true or false.
+# In --staged / --cached reviews untracked files are hidden by default;
+# set this to `true` explicitly to show them from the start.
 show-untracked: true
 
 # Wrap long lines in the diff viewer: true or false
@@ -565,7 +567,10 @@ categories:
 # Default git diff arguments for this project
 default-diff-args: "--staged"
 
-# Show untracked files (new files not yet added to git): true or false
+# Show untracked files (new files not yet added to git): true or false.
+# When set to `true` explicitly, untracked files are shown from the start
+# for `--staged` / `--cached` reviews, which otherwise hide them by default
+# (they can still be revealed at runtime via the toolbar toggle).
 show-untracked: true
 
 # Wrap long lines in the diff viewer: true or false
@@ -613,7 +618,7 @@ The CLI runs `git diff` as a child process with the arguments provided by the us
 const diffOutput = execSync(`git diff ${userArgs.join(' ')}`, { cwd: process.cwd() });
 ```
 
-In addition to tracked changes, the application discovers **untracked files** (new files not yet added to git) via `git ls-files --others --exclude-standard`. For each untracked file, a synthetic unified diff is generated showing all lines as additions. These files are tagged with `isUntracked` internally and can be shown or hidden via a toolbar toggle (default: on) or the `show-untracked` configuration option. Untracked files respect `.gitignore` rules.
+In addition to tracked changes, the application discovers **untracked files** (new files not yet added to git) via `git ls-files --others --exclude-standard`. For each untracked file, a synthetic unified diff is generated showing all lines as additions. These files are tagged with `isUntracked` internally and can be shown or hidden via a toolbar toggle (default: on) or the `show-untracked` configuration option. Untracked files respect `.gitignore` rules. When the diff is invoked with `--staged` or `--cached` (index-vs-HEAD reviews), untracked files are **hidden by default** since they are not part of the index; they remain preloaded and can be revealed instantly by clicking the "Show New Files" toolbar toggle. Setting `show-untracked: true` explicitly in the YAML config overrides this default and shows them from the start.
 
 ### 9.2 Diff Parsing
 

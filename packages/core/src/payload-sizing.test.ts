@@ -14,6 +14,7 @@ function makeConfig(overrides: Partial<AppConfig> = {}): AppConfig {
     categories: [],
     defaultDiffArgs: '',
     showUntracked: true,
+    showUntrackedExplicit: false,
     wordWrap: true,
     maxFiles: 500,
     maxTotalLines: 100000,

@@ -50,6 +50,7 @@ export const defaultConfig: AppConfig = {
   ],
   defaultDiffArgs: '--staged',
   showUntracked: true,
+  showUntrackedExplicit: false,
   wordWrap: true,
   maxFiles: 500,
   maxTotalLines: 100000,
